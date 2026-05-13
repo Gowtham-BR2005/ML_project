@@ -1,0 +1,91 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #f5f8fa;
+  color: #222;
+}
+
+header {
+  background: linear-gradient(135deg, #004d7a, #00bf72);
+  color: white;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+main {
+  padding: 2rem 10%;
+}
+
+section {
+  background: white;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h2 {
+  color: #004d7a;
+  border-left: 5px solid #00bf72;
+  padding-left: 10px;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+form input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  flex: 1;
+}
+
+form button {
+  background: #00bf72;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+form button:hover {
+  background: #009e61;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+table, th, td {
+  border: 1px solid #ccc;
+}
+
+th, td {
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background: #004d7a;
+  color: white;
+}
+
+#statsResult p {
+  font-size: 1.1rem;
+  margin: 0.4rem 0;
+}
+
+footer {
+  text-align: center;
+  background: #002b45;
+  color: white;
+  padding: 1rem;
+}

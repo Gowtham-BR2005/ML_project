@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Prediction Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div class="min-h-screen p-6">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                            📈 Stock Price Prediction
+                        </h1>
+                        <p class="text-gray-600">AI-Powered LSTM Model for Indian Stock Market</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Powered by</div>
+                        <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Deep Learning
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Panel -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Configuration</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Stock Symbol -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Stock Symbol
+                        </label>
+                        <select id="stockSymbol" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+                            <option value="RELIANCE.BSE">Reliance Industries (BSE)</option>
+                            <option value="RELIANCE.NS">Reliance Industries (NSE)</option>
+                            <option value="TCS.BSE">TCS (BSE)</option>
+                            <option value="INFY.NS">Infosys (NSE)</option>
+                            <option value="HDFCBANK.NS">HDFC Bank (NSE)</option>
+                        </select>
+                    </div>
+
+                    <!-- Prediction Days -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Prediction Period
+                        </label>
+                        <select id="predictionDays" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors">
+                            <option value="1">1 Day</option>
+                            <option value="3">3 Days</option>
+                            <option value="7">7 Days (1 Week)</option>
+                            <option value="30" selected>30 Days (1 Month)</option>
+                            <option value="90">90 Days (3 Months)</option>
+                        </select>
+                    </div>
+
+                    <!-- Upload CSV -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Upload Historical Data
+                        </label>
+                        <label class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 cursor-pointer transition-colors">
+                            <span id="fileName" class="text-gray-600">📁 Upload CSV</span>
+                            <input type="file" id="csvFile" accept=".csv" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Run Prediction Button -->
+                <div class="mt-6">
+                    <button id="runPrediction" class="w-full py-4 rounded-lg font-semibold text-white transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl">
+                        🚀 Run Prediction Model
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100 text-center">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
+                <p class="text-gray-700 font-semibold">Training LSTM Model...</p>
+                <p class="text-gray-500 text-sm mt-2">This may take a few seconds</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden">
+                <!-- Metrics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
+                        <div class="text-sm font-semibold opacity-80 mb-2">Accuracy</div>
+                        <div id="mapeScore" class="text-3xl font-bold">0%</div>
+                        <div class="text-sm opacity-80 mt-1">MAPE Score</div>
+                    </div>
+
+                    <div id="trendCard" class="bg-gradient-to-br rounded-2xl shadow-lg p-6 text-white">
+                        <div class="text-sm font-semibold opacity-80 mb-2">Trend</div>
+                        <div id="trendPercent" class="text-3xl font-bold">0%</div>
+                        <div id="trendDirection" class="text-sm opacity-80 mt-1">-</div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
+                        <div class="text-sm font-semibold opacity-80 mb-2">Current Price</div>
+                        <div id="currentPrice" class="text-3xl font-bold">₹0</div>
+                        <div class="text-sm opacity-80 mt-1">Last Known</div>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white">
+                        <div class="text-sm font-semibold opacity-80 mb-2">Forecast</div>
+                        <div id="forecastPrice" class="text-3xl font-bold">₹0</div>
+                        <div id="forecastDay" class="text-sm opacity-80 mt-1">Day 0</div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Price Prediction Chart</h2>
+                        <button id="downloadCSV" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            💾 Download CSV
+                        </button>
+                    </div>
+                    <canvas id="priceChart" height="100"></canvas>
+                </div>
+
+                <!-- Predictions Table -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Detailed Predictions</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                                    <th class="text-right py-3 px-4 font-semibold text-gray-700">Predicted Price</th>
+                                    <th class="text-right py-3 px-4 font-semibold text-gray-700">Lower Bound</th>
+                                    <th class="text-right py-3 px-4 font-semibold text-gray-700">Upper Bound</th>
+                                    <th class="text-right py-3 px-4 font-semibold text-gray-700">Change</th>
+                                </tr>
+                            </thead>
+                            <tbody id="predictionsTable">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Banner -->
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 mt-6 flex items-start">
+                <div class="text-blue-600 mr-3 text-2xl">ℹ️</div>
+                <div>
+                    <h3 class="font-semibold text-blue-900 mb-2">Important Notice</h3>
+                    <p class="text-blue-800 text-sm leading-relaxed">
+                        This is a demonstration using simulated predictions. To use with real data, connect this frontend to your Python LSTM model backend. 
+                        Stock predictions are for educational purposes only and should not be used as the sole basis for investment decisions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+        let predictionsData = [];
+
+        // Generate sample historical data
+        function generateHistoricalData(symbol) {
+            const data = [];
+            const basePrice = symbol.includes('RELIANCE') ? 2500 : 150;
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 60);
+
+            for (let i = 0; i < 60; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const randomVariation = (Math.random() - 0.5) * 50;
+                const trendFactor = Math.sin(i / 10) * 100;
+                const price = basePrice + trendFactor + randomVariation;
+                
+                data.push({
+                    date: date.toISOString().split('T')[0],
+                    price: Math.max(price, basePrice * 0.8)
+                });
+            }
+            return data;
+        }
+
+        // Run prediction
+        document.getElementById('runPrediction').addEventListener('click', function() {
+            const stockSymbol = document.getElementById('stockSymbol').value;
+            const predictionDays = parseInt(document.getElementById('predictionDays').value);
+
+            // Show loading
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+
+            // Simulate API call
+            setTimeout(() => {
+                const historicalData = generateHistoricalData(stockSymbol);
+                const predictions = generatePredictions(historicalData, predictionDays);
+                
+                displayResults(historicalData, predictions, predictionDays);
+                
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                document.getElementById('resultsSection').classList.remove('hidden');
+            }, 2000);
+        });
+
+        // Generate predictions
+        function generatePredictions(historical, days) {
+            const predictions = [];
+            const lastPrice = historical[historical.length - 1].price;
+            const lastDate = new Date(historical[historical.length - 1].date);
+
+            for (let i = 1; i <= days; i++) {
+                const date = new Date(lastDate);
+                date.setDate(date.getDate() + i);
+                
+                const trendFactor = (Math.random() - 0.48) * 10;
+                const noise = (Math.random() - 0.5) * 5;
+                const predictedPrice = lastPrice + (i * 0.5) + trendFactor + noise;
+                
+                predictions.push({
+                    date: date.toISOString().split('T')[0],
+                    price: predictedPrice,
+                    upperBound: predictedPrice + 20 + (i * 0.3),
+                    lowerBound: predictedPrice - 20 - (i * 0.3)
+                });
+            }
+            return predictions;
+        }
+
+        // Display results
+        function displayResults(historical, predictions, days) {
+            predictionsData = predictions;
+            
+            const lastHistorical = historical[historical.length - 1].price;
+            const lastPredicted = predictions[predictions.length - 1].price;
+            const change = lastPredicted - lastHistorical;
+            const changePercent = (change / lastHistorical) * 100;
+            const isBullish = change > 0;
+
+            // Update metrics
+            document.getElementById('mapeScore').textContent = (Math.random() * 3 + 2).toFixed(2) + '%';
+            document.getElementById('currentPrice').textContent = '₹' + lastHistorical.toFixed(2);
+            document.getElementById('forecastPrice').textContent = '₹' + lastPredicted.toFixed(2);
+            document.getElementById('forecastDay').textContent = 'Day ' + days;
+            document.getElementById('trendPercent').textContent = (isBullish ? '+' : '') + changePercent.toFixed(2) + '%';
+            document.getElementById('trendDirection').textContent = isBullish ? 'Bullish ↑' : 'Bearish ↓';
+            
+            const trendCard = document.getElementById('trendCard');
+            if (isBullish) {
+                trendCard.className = 'bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white';
+            } else {
+                trendCard.className = 'bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white';
+            }
+
+            // Update chart
+            updateChart(historical, predictions);
+
+            // Update table
+            updateTable(predictions, lastHistorical);
+        }
+
+        // Update chart
+        function updateChart(historical, predictions) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            const allData = [...historical, ...predictions];
+            const labels = allData.map(d => d.date);
+            const prices = allData.map(d => d.price);
+            const upperBounds = historical.map(d => null).concat(predictions.map(d => d.upperBound));
+            const lowerBounds = historical.map(d => null).concat(predictions.map(d => d.lowerBound));
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Historical / Predicted Price',
+                        data: prices,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Upper Bound',
+                        data: upperBounds,
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }, {
+                        label: 'Lower Bound',
+                        data: lowerBounds,
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toFixed(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update table
+        function updateTable(predictions, lastHistorical) {
+            const tbody = document.getElementById('predictionsTable');
+            tbody.innerHTML = '';
+
+            predictions.slice(0, 10).forEach((pred, idx) => {
+                const prevPrice = idx === 0 ? lastHistorical : predictions[idx - 1].price;
+                const change = ((pred.price - prevPrice) / prevPrice) * 100;
+                
+                const row = `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td class="py-3 px-4 text-gray-700">${new Date(pred.date).toLocaleDateString('en-GB')}</td>
+                        <td class="text-right py-3 px-4 font-semibold text-gray-800">₹${pred.price.toFixed(2)}</td>
+                        <td class="text-right py-3 px-4 text-gray-600">₹${pred.lowerBound.toFixed(2)}</td>
+                        <td class="text-right py-3 px-4 text-gray-600">₹${pred.upperBound.toFixed(2)}</td>
+                        <td class="text-right py-3 px-4 font-semibold ${change >= 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Download CSV
+        document.getElementById('downloadCSV').addEventListener('click', function() {
+            if (predictionsData.length === 0) return;
+            
+            let csv = 'Date,Predicted Price,Lower Bound,Upper Bound\n';
+            predictionsData.forEach(p => {
+                csv += `${p.date},${p.price.toFixed(2)},${p.lowerBound.toFixed(2)},${p.upperBound.toFixed(2)}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stock_predictions.csv';
+            a.click();
+        });
+
+        // File upload
+        document.getElementById('csvFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = '✅ ' + file.name;
+            }
+        });
+    </script>
+</body>
+</html>
